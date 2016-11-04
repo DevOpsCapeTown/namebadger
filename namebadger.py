@@ -11,7 +11,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
-pdf_source = open('badges-a3.pdf', 'rb')
+pdf_source = open('badges-a3-double.pdf', 'rb')
 pdf_in = PdfFileReader(pdf_source)
 
 
@@ -45,23 +45,21 @@ def names_page(names):
     can.setFillColorRGB(6/256, 60/256, 91/256)
 
     positions = [
-        [110, 1056],
-        [425, 1056],
-        [110, 740],
-        [425, 740],
-        [110, 424],
-        [425, 424],
+        [[110, 1056], [408, 1056]],
+        [[110, 740], [408, 740]],
+        [[110, 424], [408, 424]],
     ]
 
     for index, name in enumerate(names):
-        x = positions[index][0]
-        y = positions[index][1]
-        can.setFont('Avenir-Bold', determine_size(name[0], 24))
-        can.drawString(x, y, name[0].upper())
-        can.setFont('Avenir', determine_size(name[1], 24))
-        can.drawString(x, y-26, name[1].upper())
-        #can.setFont('Avenir', determine_size(name[2], 20))
-        #can.drawString(x, y-26-32, name[2])
+        for c in range(0,2):
+            x = positions[index][c][0]
+            y = positions[index][c][1]
+            can.setFont('Avenir-Bold', determine_size(name[0], 24))
+            can.drawString(x, y, name[0].upper())
+            can.setFont('Avenir', determine_size(name[1], 24))
+            can.drawString(x, y-26, name[1].upper())
+            #can.setFont('Avenir', determine_size(name[2], 20))
+            #can.drawString(x, y-26-32, name[2])
 
     can.showPage()
     can.save()
@@ -89,7 +87,7 @@ attendees = load_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), '
 #pprint.PrettyPrinter().pprint(attendees)
 #import sys
 #sys.exit(0)
-chunks = [attendees[x:x+6] for x in range(0, len(attendees), 6)]
+chunks = [attendees[x:x+3] for x in range(0, len(attendees), 3)]
 for chunk in chunks:
     packet = names_page(chunk)
     pdf_new = PdfFileReader(packet)
