@@ -12,10 +12,14 @@ CSV_FILE = 'devopsdays-cape-town-2018_guestlist.csv'
 FIRSTNAME_COLUMN = 30
 LASTNAME_COLUMN = 31
 
+CSV_HEADER_LINE = False
+
 PDF_TEMPLATE = 'A3-Layout-Attendee-Test.pdf'
+#PDF_TEMPLATE = 'A3-Layout-Crew.pdf'
 PDF_SIZE = A3
 #PDF_SIZE = A4
 
+BLANK_PAGES = 0
 
 a3_positions_2017 = [
     [[106, 1026], [406, 1026]],
@@ -23,17 +27,23 @@ a3_positions_2017 = [
     [[106, 422], [406, 422]],
 ]
 
-a3_positions_2018 = [
+a3_positions_2018_attendees = [
     [[118, 1026], [430, 1026]],
     [[118, 714], [430, 714]],
     [[118, 400], [430, 400]],
+]
+
+a3_positions_2018_crew = [
+    [[152, 1058], [464, 1058]],
+    [[152, 746], [464, 746]],
+    [[152, 432], [464, 432]],
 ]
 
 a4_positions = [
     [[130, 410], [430, 410]],
 ]
 
-POSITIONS = a3_positions_2018
+POSITIONS = a3_positions_2018_attendees
 
 #TEXT_RGB = (6, 60, 91) # blue
 TEXT_RGB = (16, 95, 89) # green
@@ -53,6 +63,11 @@ TEXT_SIZE_THRESHOLDS = (
 
 FIRSTNAME_FONT = 'Avenir-Bold'
 LASTNAME_FONT = 'Avenir'
+
+#TAGLINE = "AV CREW"
+#TAGLINE_RGB = (144, 11, 63)
+#TAGLINE_FONT = "Avenir-Bold"
+#TAGLINE_INDENT = 16
 
 pdf_source = open(PDF_TEMPLATE, 'rb')
 pdf_in = PdfFileReader(pdf_source)
@@ -74,16 +89,22 @@ def names_page(names, positions):
     pdfmetrics.registerFont(TTFont("Avenir", os.path.join(fonts_dir, 'avenir.ttf')))
     pdfmetrics.registerFont(TTFont("Avenir-Bold", os.path.join(fonts_dir, 'avenir_bold.ttf')))
 
-    can.setFillColorRGB(TEXT_RGB[0]/256, TEXT_RGB[1]/256, TEXT_RGB[2]/256)
-
     for index, name in enumerate(names):
         for c in range(0,2):
             x = positions[index][c][0]
             y = positions[index][c][1]
+            can.setFillColorRGB(TEXT_RGB[0]/256, TEXT_RGB[1]/256, TEXT_RGB[2]/256)
             can.setFont(FIRSTNAME_FONT, determine_size(name[0], TEXT_START_SIZE))
             can.drawString(x, y, name[0].upper())
             can.setFont(LASTNAME_FONT, determine_size(name[1], TEXT_START_SIZE))
-            can.drawString(x, y-26, name[1].upper())
+            can.drawString(x, y - 26, name[1].upper())
+            try:
+                if TAGLINE:
+                    can.setFillColorRGB(TAGLINE_RGB[0]/256, TAGLINE_RGB[1]/256, TAGLINE_RGB[2]/256)
+                    can.setFont(TAGLINE_FONT, determine_size(TAGLINE, TEXT_START_SIZE))
+                    can.drawString(x + TAGLINE_INDENT, y - 104, TAGLINE)
+            except NameError:
+                pass
 
     can.showPage()
     can.save()
@@ -95,7 +116,8 @@ def load_csv(path):
     attendees = []
     with open(path, 'r') as f:
         reader = csv.reader(f)
-        next(reader)
+        if CSV_HEADER_LINE:
+            next(reader)
         for row in reader:
             last_name = row[LASTNAME_COLUMN].strip()
             #first_name = re.sub('{}$'.format(re.escape(last_name)), '', row[25].strip(), flags=re.IGNORECASE)
@@ -123,8 +145,13 @@ for chunk in chunks:
     page.mergePage(pdf_new.getPage(0))
     writer.addPage(page)
 
-blank = copy(pdf_in.getPage(0))
-writer.addPage(blank)
+try:
+    if BLANK_PAGES:
+        blank = copy(pdf_in.getPage(0))
+        for i in range(0, BLANK_PAGES):
+            writer.addPage(blank)
+except NameError:
+    pass
 
 writer.write(output)
 output.close()
